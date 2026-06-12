@@ -49,7 +49,8 @@ progress are stored in SQLite at `artifacts\app-results\jobs.sqlite3`, and
 generated NetCDF/PNG/WebGL artifacts are cached under `artifacts\app-results`.
 Repeating the same input file and parameter set loads the saved result without
 rerunning the optimizer. The UI can cancel, retry, and delete terminal jobs,
-shows result storage usage, and can clean orphaned cached result folders.
+download a ZIP archive with all run artifacts, show result storage usage, and
+clean orphaned cached result folders.
 
 Completed browser jobs embed the WebGL terrain viewer directly in the main
 result panel instead of opening a separate tab. The worker also exports up to
@@ -63,6 +64,9 @@ normalization on the server.
 New runs also generate `slope_comparison.png` and `validation_report.md`.
 The slope report compares derived slope before/after and the slope delta, then
 records slope RMSE, P95 absolute slope delta, and slope correlation metrics.
+The artifact ZIP also includes `pixel_1to1/` PNG exports where each DEM grid
+cell maps to exactly one PNG pixel: elevation before/after/delta and slope
+before/after/delta.
 
 For NVIDIA GPU probing inside Docker, run with the override file:
 

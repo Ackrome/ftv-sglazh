@@ -106,6 +106,7 @@ const I18N = {
     retry: "Retry",
     delete: "Delete",
     report: "Report",
+    downloadArtifacts: "Download artifacts",
     cleanup: "Cleanup",
     storageChecking: "Storage: checking",
     storageLine: "Storage: {size} in {count} result folders",
@@ -229,6 +230,7 @@ const I18N = {
     retry: "Повторить",
     delete: "Удалить",
     report: "Отчет",
+    downloadArtifacts: "Скачать артефакты",
     cleanup: "Очистить",
     storageChecking: "Хранилище: проверка",
     storageLine: "Хранилище: {size} в {count} папках результатов",
@@ -402,6 +404,7 @@ function translateStage(stage) {
     ["Preparing calculation", "Подготовка расчета"],
     ["Optimizing FTV", "Оптимизация FTV"],
     ["Rendering slope comparison PNG", "Построение PNG сравнения наклона"],
+    ["Exporting 1:1 PNG artifacts", "Экспорт PNG 1:1"],
     ["Exporting WebGL model", "Экспорт WebGL модели"],
     ["Exporting changed-area samples", "Экспорт участков изменений"],
     ["Queued on CPU worker", "В очереди CPU worker"],
@@ -479,6 +482,7 @@ function applyLanguage() {
   setText("#retryJobButton", t("retry"));
   setText("#deleteJobButton", t("delete"));
   setText("#reportLink span", t("report"));
+  setText("#artifactsLink span", t("downloadArtifacts"));
   setText("#statusBox", t("ready"));
   setText("#emptyPreview", t("savedResultsAppear"));
   setText("#slopeSection h3", t("slopeComparison"));
@@ -1172,6 +1176,19 @@ function renderReportLink(result) {
   }
 }
 
+function renderArtifactsLink(job, result) {
+  const link = $("#artifactsLink");
+  if (job?.status === "completed" && result) {
+    link.href = `/api/jobs/${encodeURIComponent(job.id)}/artifacts.zip`;
+    link.hidden = false;
+    link.classList.remove("is-disabled");
+  } else {
+    link.href = "#";
+    link.hidden = true;
+    link.classList.add("is-disabled");
+  }
+}
+
 function renderJob(job) {
   state.selectedJobId = job.id;
   $("#resultSubtitle").textContent = parameterLine(job);
@@ -1197,6 +1214,7 @@ function renderJob(job) {
   renderTerrainResult(job);
   renderSlopeResult(result, job.id);
   renderReportLink(result);
+  renderArtifactsLink(job, result);
   renderMetrics(result);
   renderHistory();
 }
@@ -1214,6 +1232,7 @@ function clearResultPanel() {
   $("#slopeSection").hidden = true;
   $("#slopeImage").removeAttribute("src");
   renderReportLink(null);
+  renderArtifactsLink(null, null);
   clearTerrainResult();
   renderMetrics(null);
   renderHistory();

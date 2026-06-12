@@ -127,9 +127,23 @@ def test_worker_executes_job_and_reuses_completed_cache(monkeypatch, tmp_path: P
         Path(output_dir, "index.json").write_text('{"samples": []}', encoding="utf-8")
         return {"schema_version": 1, "sample_count": count, "samples": []}
 
+    def fake_export_pixel_comparison_pngs(input_path, output_dir):
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        Path(output_dir, "elevation_before_1to1.png").write_bytes(b"png")
+        Path(output_dir, "index.json").write_text(
+            '{"files": {"elevation_before_png": "elevation_before_1to1.png"}}',
+            encoding="utf-8",
+        )
+        return {
+            "schema_version": 1,
+            "shape": [2, 2],
+            "files": {"elevation_before_png": "elevation_before_1to1.png"},
+        }
+
     monkeypatch.setattr(worker, "orchestrate_file", fake_orchestrate_file)
     monkeypatch.setattr(worker, "export_dataset_webgl_model", fake_export_dataset_webgl_model)
     monkeypatch.setattr(worker, "export_changed_roi_samples", fake_export_changed_roi_samples)
+    monkeypatch.setattr(worker, "export_pixel_comparison_pngs", fake_export_pixel_comparison_pngs)
 
     first = store.create_job(
         cache_key="0123456789abcdef",
@@ -152,6 +166,7 @@ def test_worker_executes_job_and_reuses_completed_cache(monkeypatch, tmp_path: P
     assert completed["progress_percent"] == 100
     assert "comparison_png" in completed["result"]["urls"]
     assert "webgl" in completed["result"]["urls"]
+    assert "pixel_1to1_index" in completed["result"]["urls"]
     assert completed["result"]["roi_samples"]["sample_count"] == 2
 
 

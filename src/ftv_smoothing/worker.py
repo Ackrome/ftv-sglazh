@@ -26,6 +26,7 @@ from .app_core import (
 )
 from .job_store import JobStore
 from .pipeline import orchestrate_file
+from .pixel_export import export_pixel_comparison_pngs
 from .roi_export import export_changed_roi_samples
 from .webgl_export import WebGLTerrainConfig, export_dataset_webgl_model
 
@@ -179,6 +180,7 @@ def execute_job(job_id: str, *, store: JobStore | None = None) -> dict[str, Any]
     comparison_png = directory / "comparison.png"
     diagnostics_png = directory / "diagnostics.png"
     slope_comparison_png = directory / "slope_comparison.png"
+    pixel_dir = directory / "pixel_1to1"
     webgl_dir = directory / "webgl"
     roi_dir = directory / "roi"
 
@@ -226,6 +228,9 @@ def execute_job(job_id: str, *, store: JobStore | None = None) -> dict[str, Any]
             progress_callback=report,
         )
         ensure_not_cancelled()
+        report("Exporting 1:1 PNG artifacts", 95.5)
+        pixel_exports = export_pixel_comparison_pngs(output_nc, pixel_dir)
+        ensure_not_cancelled()
         report("Exporting WebGL model", 96)
         webgl = export_dataset_webgl_model(
             output_nc,
@@ -266,12 +271,14 @@ def execute_job(job_id: str, *, store: JobStore | None = None) -> dict[str, Any]
                 "slope_comparison_png": slope_comparison_png.name,
                 "metrics_json": metrics_path.name,
                 "validation_report_md": report_path.name,
+                "pixel_1to1_index": "pixel_1to1/index.json",
                 "webgl_index": "webgl/index.html",
                 "roi_index": "roi/index.json",
             },
             "metrics": metrics,
             "webgl": webgl.metadata,
             "roi_samples": roi_samples,
+            "pixel_1to1": pixel_exports,
         }
         write_result_metadata(results_dir, cache_key, metadata)
         store.complete_job(job_id, result_metadata=metadata)

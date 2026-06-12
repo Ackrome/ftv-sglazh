@@ -9,11 +9,14 @@ import json
 import logging
 import mimetypes
 import shutil
+import tempfile
+import zipfile
 from pathlib import Path
 from typing import Any
 
 from fastapi import Body, FastAPI, HTTPException
 from fastapi.responses import FileResponse, Response, StreamingResponse
+from starlette.background import BackgroundTask
 
 from .app_core import (
     CACHE_SCHEMA_VERSION,
@@ -111,6 +114,30 @@ def _revoke_celery_task(task_id: str | None) -> None:
         control.revoke(task_id, terminate=True, signal="SIGTERM")
     except Exception:
         LOGGER.exception("Failed to revoke Celery task %s", task_id)
+
+
+def _create_artifacts_zip(results_dir: Path, cache_key: str) -> Path:
+    base = result_dir(results_dir, cache_key).resolve()
+    if not base.is_dir():
+        raise HTTPException(status_code=404, detail="Result artifacts not found")
+    handle = tempfile.NamedTemporaryFile(
+        prefix=f"ftv-{cache_key}-",
+        suffix=".zip",
+        delete=False,
+    )
+    zip_path = Path(handle.name)
+    handle.close()
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for path in sorted(base.rglob("*")):
+            if not path.is_file() or path.suffix.lower() == ".zip":
+                continue
+            resolved = path.resolve()
+            try:
+                relative = resolved.relative_to(base)
+            except ValueError:
+                continue
+            archive.write(resolved, Path(cache_key, relative).as_posix())
+    return zip_path
 
 
 def build_app(
@@ -261,6 +288,24 @@ def build_app(
             shutil.rmtree(result_dir(app_config.results_dir, deleted["cache_key"]), ignore_errors=True)
             files_deleted = True
         return {"deleted": bool(deleted), "job_id": job_id, "files_deleted": files_deleted}
+
+    @app.get("/api/jobs/{job_id}/artifacts.zip")
+    def download_job_artifacts(job_id: str) -> FileResponse:
+        job = job_store.get_job(job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail="Job not found")
+        if job["status"] != "completed" or not job.get("result_metadata"):
+            raise HTTPException(status_code=409, detail="Artifacts are available after completion")
+        metadata = job["result_metadata"]
+        if not has_completed_files(app_config.results_dir, metadata):
+            raise HTTPException(status_code=404, detail="Completed artifact files are missing")
+        zip_path = _create_artifacts_zip(app_config.results_dir, job["cache_key"])
+        return FileResponse(
+            zip_path,
+            media_type="application/zip",
+            filename=f"ftv-{job['cache_key']}-artifacts.zip",
+            background=BackgroundTask(lambda: zip_path.unlink(missing_ok=True)),
+        )
 
     @app.get("/api/storage")
     def storage() -> dict[str, Any]:

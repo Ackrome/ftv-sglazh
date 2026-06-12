@@ -15,7 +15,7 @@ from typing import Any
 from .config import FTVConfig
 from .webgl_export import WebGLTerrainConfig
 
-CACHE_SCHEMA_VERSION = 3
+CACHE_SCHEMA_VERSION = 4
 KEY_RE = re.compile(r"^[0-9a-f]{16}$")
 TERMINAL_STATUSES = {"completed", "failed", "cancelled"}
 MAX_ROI_SAMPLE_COUNT = 4
@@ -387,6 +387,24 @@ def _roi_files_exist(directory: Path, relative_index: Any) -> bool:
     return True
 
 
+def _pixel_exports_exist(directory: Path, relative_index: Any) -> bool:
+    if not _result_file_exists(directory, relative_index):
+        return False
+    index_path = (directory / str(relative_index)).resolve()
+    pixel_base = index_path.parent
+    try:
+        payload = json.loads(index_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    files = payload.get("files", {})
+    if not isinstance(files, dict):
+        return False
+    for relative in files.values():
+        if not _result_file_exists(pixel_base, relative):
+            return False
+    return True
+
+
 def has_completed_files(results_dir: Path, metadata: dict[str, Any]) -> bool:
     """Return True when required cached result files still exist."""
 
@@ -399,12 +417,19 @@ def has_completed_files(results_dir: Path, metadata: dict[str, Any]) -> bool:
     if int(metadata.get("schema_version", 0) or 0) >= 3:
         required.append("slope_comparison_png")
         required.append("validation_report_md")
+    if int(metadata.get("schema_version", 0) or 0) >= 4:
+        required.append("pixel_1to1_index")
     for name in required:
         if not _result_file_exists(directory, files.get(name)):
             return False
     if files.get("webgl_index") and not _webgl_files_exist(directory, files.get("webgl_index")):
         return False
     if files.get("roi_index") and not _roi_files_exist(directory, files.get("roi_index")):
+        return False
+    if files.get("pixel_1to1_index") and not _pixel_exports_exist(
+        directory,
+        files.get("pixel_1to1_index"),
+    ):
         return False
     return True
 
@@ -426,6 +451,7 @@ def public_result_metadata(
     if files.get("webgl_index"):
         urls["webgl"] = f"/viewer/{key}/"
         urls["webgl_model"] = f"/results/{key}/webgl/terrain-model.json"
+    urls["artifacts_zip_template"] = "/api/jobs/{job_id}/artifacts.zip"
     public = dict(metadata)
     public["cache_hit"] = cache_hit
     public["urls"] = urls

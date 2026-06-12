@@ -94,6 +94,7 @@ stages and optimizer iterations:
 - postprocessing;
 - metrics and PNG rendering;
 - slope comparison PNG rendering;
+- exact-grid 1:1 PNG artifact export;
 - NetCDF serialization;
 - full-area WebGL model export;
 - most-changed ROI sample export.
@@ -109,12 +110,35 @@ The result panel exposes actions for the selected job:
 - `Delete`: removes a terminal job row from history. Result files are kept
   unless no remaining job references the same cache key and the API is called
   with `delete_files=true`;
+- `Download artifacts`: appears after completion and downloads a ZIP archive
+  with every file created in the selected run directory;
 - `Cleanup`: removes orphaned result directories that are no longer referenced
   by any job row.
 
 The history panel shows current storage usage from `/api/storage`: total bytes
 under `artifacts\app-results` and the number of cached result folders. The
 cleanup action refreshes this number after deleting orphaned folders.
+
+The archive endpoint is `/api/jobs/{job_id}/artifacts.zip`. It builds the ZIP
+from the cached result directory on demand and names the top-level ZIP folder
+after the result cache key.
+
+### 1:1 PNG artifacts
+
+Each new completed run writes exact-grid PNGs under `pixel_1to1/`. These files
+are intended for pixel-level inspection and external GIS/image tooling:
+
+- `elevation_before_1to1.png`;
+- `elevation_after_1to1.png`;
+- `elevation_delta_1to1.png`;
+- `slope_before_1to1.png`;
+- `slope_after_1to1.png`;
+- `slope_delta_1to1.png`;
+- `index.json` with shape, color limits, resolution, and file names.
+
+The mapping is exactly `1 DEM grid cell = 1 PNG pixel`; no DPI scaling,
+resampling, figure padding, axes, or labels are applied. Invalid cells are
+rendered as white pixels. These files are included in `Download artifacts`.
 
 ### Slope comparison and validation report
 
