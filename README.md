@@ -53,7 +53,7 @@ shows result storage usage, and can clean orphaned cached result folders.
 
 Completed browser jobs embed the WebGL terrain viewer directly in the main
 result panel instead of opening a separate tab. The worker also exports up to
-ten most-changed ROI samples: each row shows 2D before/after PNG crops with
+four most-changed ROI samples: each row shows 2D before/after PNG crops with
 highlighted high-change segments plus synchronized interactive 3D before/after
 crops. The same high-change segment mask is shown as an amber overlay in the
 3D crops. The WebUI supports English/Russian switching and snaps typed numeric

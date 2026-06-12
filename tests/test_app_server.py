@@ -33,7 +33,7 @@ def test_normalize_request_snaps_numeric_values(tmp_path: Path) -> None:
     assert params["alpha"] == 1.55
     assert params["k_size"] == 11
     assert params["webgl_max_side"] == 512
-    assert params["roi_sample_count"] == 10
+    assert params["roi_sample_count"] == 4
     assert params["vertical_exaggeration"] == 3.0
 
 

@@ -18,7 +18,7 @@ from .webgl_export import WebGLTerrainConfig
 CACHE_SCHEMA_VERSION = 3
 KEY_RE = re.compile(r"^[0-9a-f]{16}$")
 TERMINAL_STATUSES = {"completed", "failed", "cancelled"}
-MAX_ROI_SAMPLE_COUNT = 10
+MAX_ROI_SAMPLE_COUNT = 4
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,7 +69,7 @@ NUMERIC_FIELD_SPECS: dict[str, NumericFieldSpec] = {
     "visualization_dpi": NumericFieldSpec("int", 72, 600, 12, 180),
     "webgl_max_side": NumericFieldSpec("int", 64, 2048, 64, 512),
     "vertical_exaggeration": NumericFieldSpec("float", 0.1, 8.0, 0.1, 2.4),
-    "roi_sample_count": NumericFieldSpec("int", 0, MAX_ROI_SAMPLE_COUNT, 1, 10),
+    "roi_sample_count": NumericFieldSpec("int", 0, MAX_ROI_SAMPLE_COUNT, 1, 4),
 }
 
 

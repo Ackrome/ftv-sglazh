@@ -240,7 +240,7 @@ def execute_job(job_id: str, *, store: JobStore | None = None) -> dict[str, Any]
         roi_samples = export_changed_roi_samples(
             output_nc,
             roi_dir,
-            count=params.get("roi_sample_count", 10),
+            count=params.get("roi_sample_count", 4),
             config=WebGLTerrainConfig(
                 max_side=params["webgl_max_side"],
                 vertical_exaggeration=params["vertical_exaggeration"],

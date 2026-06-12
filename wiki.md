@@ -59,7 +59,7 @@ The form fields control the run hyperparameters. Each field in the WebUI has an
 | `Preview DPI` | Resolution of generated PNG comparison and diagnostics previews. Higher values create larger files. |
 | `WebGL side` | Maximum side length of the exported 3D terrain mesh. Higher values preserve more detail but increase viewer size. |
 | `Vertical scale` | Vertical exaggeration for the WebGL terrain viewer. It affects visualization only, not the NetCDF result. The result panel also has a slider and a numeric field for changing this value interactively. |
-| `ROI samples` | Number of most-changed areas to export as detailed 2D and 3D before/after examples. Use `0` to disable; the WebUI caps this at `10`. |
+| `ROI samples` | Number of most-changed areas to export as detailed 2D and 3D before/after examples. Use `0` to disable; the WebUI caps this at `4`. |
 | `Postprocess` | Enables morphological cleanup after FTV to reduce isolated correction artifacts. |
 | `Save SARP` | Stores the adaptive SARP fidelity field in the output NetCDF for later inspection. |
 
@@ -141,7 +141,7 @@ selected result directory.
 
 The `Most changed areas` section is generated from the absolute correction
 `abs(reprojected_dem_ftv - reprojected_dem)`. The exporter ranks
-non-overlapping windows by mean absolute correction, then writes up to ten rows
+non-overlapping windows by mean absolute correction, then writes up to four rows
 per selected ROI. Each row has four visual columns:
 
 | Column | Content |
@@ -162,7 +162,7 @@ panning, zooming, or pressing `Fit` on the main 3D viewer synchronizes the
 camera across the ROI before/after views. The shared `Vertical` slider and
 numeric input apply the same vertical exaggeration to every embedded 3D view.
 ROI WebGL views are loaded lazily and old offscreen contexts are released, so a
-top-10 table does not exhaust the browser's WebGL context limit.
+top-4 table stays inside the browser's WebGL context limit.
 
 ### Compute backend diagnostics and auto-selection
 
