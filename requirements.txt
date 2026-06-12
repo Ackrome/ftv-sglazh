@@ -1,0 +1,21 @@
+celery[redis]>=5.4
+fastapi>=0.115
+flower>=2.0
+forge3d==1.26.0
+h5py==3.16.0
+h5netcdf==1.8.1
+matplotlib==3.10.9
+numba==0.65.1
+numpy==2.4.6
+pillow==12.2.0
+psutil==7.2.2
+scikit-image==0.26.0
+scipy==1.17.1
+uvicorn[standard]>=0.30
+xarray==2026.4.0
+
+# GPU acceleration. The ctk extra installs the CUDA headers needed by CuPy JIT.
+cupy-cuda13x[ctk]==14.1.0
+
+# Development and validation.
+pytest==9.0.3

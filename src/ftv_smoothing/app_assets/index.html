@@ -1,0 +1,335 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FTV Calculation Console</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <h1>FTV Calculation Console</h1>
+          <p id="environmentLabel">Preparing runtime</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <label class="language-control">
+          <span>Language</span>
+          <select id="languageSelect" aria-label="Interface language">
+            <option value="en">English</option>
+            <option value="ru">Русский</option>
+          </select>
+        </label>
+        <button id="refreshButton" class="icon-button" type="button" title="Refresh saved runs" aria-label="Refresh saved runs">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-14.7 4.4M4 12A8 8 0 0 1 18.7 7.6"/><path d="M7 17H4v3M17 7h3V4"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="app-grid">
+      <section class="panel controls-panel" aria-labelledby="controlsTitle">
+        <div class="panel-heading">
+          <h2 id="controlsTitle">Run parameters</h2>
+          <div class="pill-row">
+            <span id="inputState" class="state-pill">Checking input</span>
+            <span id="computeState" class="state-pill">Checking compute</span>
+          </div>
+        </div>
+        <div class="compute-summary" aria-label="Compute backend diagnostics" aria-live="polite">
+          <div class="compute-summary-grid">
+            <div>
+              <span>Selected backend</span>
+              <strong id="computeBackend">Checking</strong>
+            </div>
+            <div>
+              <span>CUDA stack</span>
+              <strong id="computeRuntime">Checking</strong>
+            </div>
+          </div>
+          <p id="computeReason">Detecting available compute backend</p>
+          <div id="computeDevices" class="compute-devices"></div>
+        </div>
+        <form id="runForm" novalidate>
+          <label class="field wide">
+            <span class="field-label">
+              Input NetCDF
+              <span class="help-tip" tabindex="0" title="Source dataset with reprojected_dem and derivative layers." aria-label="Source dataset with reprojected_dem and derivative layers." data-tip="Source dataset with reprojected_dem and derivative layers."></span>
+            </span>
+            <input name="input_nc" type="text" autocomplete="off" />
+          </label>
+
+          <label class="field wide">
+            <span class="field-label">
+              Crop
+              <span class="help-tip" tabindex="0" title="Optional row and column slice for a smaller run. Empty value processes the full grid." aria-label="Optional row and column slice for a smaller run. Empty value processes the full grid." data-tip="Optional row and column slice for a smaller run. Empty value processes the full grid."></span>
+            </span>
+            <input name="crop" type="text" placeholder="900:1500,1500:2200" autocomplete="off" />
+          </label>
+
+          <label class="field wide preset-field">
+            <span class="field-label">
+              Preset
+              <span class="help-tip" tabindex="0" title="Fill the form with a named parameter set. Custom keeps the current values." aria-label="Fill the form with a named parameter set. Custom keeps the current values." data-tip="Fill the form with a named parameter set. Custom keeps the current values."></span>
+            </span>
+            <select id="presetSelect" name="preset">
+              <option value="custom">Custom</option>
+              <option value="fast">Fast preview</option>
+              <option value="balanced">Balanced</option>
+              <option value="conservative">Conservative</option>
+              <option value="high_quality">High quality</option>
+              <option value="aggressive">Aggressive smoothing</option>
+            </select>
+          </label>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">
+                Alpha
+                <span class="help-tip" tabindex="0" title="Fractional derivative order. Lower values smooth more; higher values preserve sharper relief structures." aria-label="Fractional derivative order. Lower values smooth more; higher values preserve sharper relief structures." data-tip="Fractional derivative order. Lower values smooth more; higher values preserve sharper relief structures."></span>
+              </span>
+              <input name="alpha" type="number" min="1" max="2" step="0.05" />
+            </label>
+            <label class="field">
+              <span class="field-label">
+                K size
+                <span class="help-tip" tabindex="0" title="Short-memory window for fractional derivatives. Larger windows use more time and memory." aria-label="Short-memory window for fractional derivatives. Larger windows use more time and memory." data-tip="Short-memory window for fractional derivatives. Larger windows use more time and memory."></span>
+              </span>
+              <input name="k_size" type="number" min="2" max="128" step="1" />
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">
+                Lambda
+                <span class="help-tip" tabindex="0" title="Base fidelity weight. Lower values smooth more strongly; higher values keep the DEM closer to the input." aria-label="Base fidelity weight. Lower values smooth more strongly; higher values keep the DEM closer to the input." data-tip="Base fidelity weight. Lower values smooth more strongly; higher values keep the DEM closer to the input."></span>
+              </span>
+              <input name="lambda_base" type="number" min="0.01" step="0.01" />
+            </label>
+            <label class="field">
+              <span class="field-label">
+                Max iter
+                <span class="help-tip" tabindex="0" title="Maximum optimizer iterations. More iterations can improve convergence but increase runtime." aria-label="Maximum optimizer iterations. More iterations can improve convergence but increase runtime." data-tip="Maximum optimizer iterations. More iterations can improve convergence but increase runtime."></span>
+              </span>
+              <input name="max_iter" type="number" min="1" step="1" />
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">
+                Tolerance
+                <span class="help-tip" tabindex="0" title="Early-stop threshold for relative optimizer change. Smaller values demand tighter convergence." aria-label="Early-stop threshold for relative optimizer change. Smaller values demand tighter convergence." data-tip="Early-stop threshold for relative optimizer change. Smaller values demand tighter convergence."></span>
+              </span>
+              <input name="tol" type="number" min="0.0000001" step="0.0000001" />
+            </label>
+            <label class="field">
+              <span class="field-label">
+                MSA threshold
+                <span class="help-tip" tabindex="0" title="Slope anomaly threshold for artifact detection. Higher values mark fewer cells as artifacts." aria-label="Slope anomaly threshold for artifact detection. Higher values mark fewer cells as artifacts." data-tip="Slope anomaly threshold for artifact detection. Higher values mark fewer cells as artifacts."></span>
+              </span>
+              <input name="msa_threshold" type="number" min="0" step="0.1" />
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">
+                Backend
+                <span class="help-tip" tabindex="0" title="Compute backend. Auto probes GPU first and falls back to CPU; GPU is strict." aria-label="Compute backend. Auto probes GPU first and falls back to CPU; GPU is strict." data-tip="Compute backend. Auto probes GPU first and falls back to CPU; GPU is strict."></span>
+              </span>
+              <select name="backend">
+                <option value="auto">Auto</option>
+                <option value="cpu">CPU</option>
+                <option value="gpu">GPU</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">
+                Convolution
+                <span class="help-tip" tabindex="0" title="Derivative implementation. Direct is best for short windows; FFT can help with large windows." aria-label="Derivative implementation. Direct is best for short windows; FFT can help with large windows." data-tip="Derivative implementation. Direct is best for short windows; FFT can help with large windows."></span>
+              </span>
+              <select name="convolution_method">
+                <option value="auto">Auto</option>
+                <option value="direct">Direct</option>
+                <option value="fft">FFT</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">
+                Interpolation
+                <span class="help-tip" tabindex="0" title="NaN-fill diffusion passes before optimization. More passes smooth larger missing regions." aria-label="NaN-fill diffusion passes before optimization. More passes smooth larger missing regions." data-tip="NaN-fill diffusion passes before optimization. More passes smooth larger missing regions."></span>
+              </span>
+              <input name="interpolation_iterations" type="number" min="1" step="1" />
+            </label>
+            <label class="field">
+              <span class="field-label">
+                Preview DPI
+                <span class="help-tip" tabindex="0" title="Resolution for generated PNG previews. Higher values produce larger image files." aria-label="Resolution for generated PNG previews. Higher values produce larger image files." data-tip="Resolution for generated PNG previews. Higher values produce larger image files."></span>
+              </span>
+              <input name="visualization_dpi" type="number" min="72" max="600" step="12" />
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">
+                WebGL side
+                <span class="help-tip" tabindex="0" title="Maximum side length of the exported 3D mesh. Higher values preserve detail but increase viewer size." aria-label="Maximum side length of the exported 3D mesh. Higher values preserve detail but increase viewer size." data-tip="Maximum side length of the exported 3D mesh. Higher values preserve detail but increase viewer size."></span>
+              </span>
+              <input name="webgl_max_side" type="number" min="64" max="2048" step="64" />
+            </label>
+            <label class="field">
+              <span class="field-label">
+                Vertical scale
+                <span class="help-tip" tabindex="0" title="Vertical exaggeration for the WebGL terrain viewer. It changes visualization only." aria-label="Vertical exaggeration for the WebGL terrain viewer. It changes visualization only." data-tip="Vertical exaggeration for the WebGL terrain viewer. It changes visualization only."></span>
+              </span>
+              <input name="vertical_exaggeration" type="number" min="0.1" step="0.1" />
+            </label>
+          </div>
+
+          <label class="field wide">
+            <span class="field-label">
+              ROI samples
+              <span class="help-tip" tabindex="0" title="Number of most-changed areas to export as 2D and 3D before/after examples. Use 0 to disable." aria-label="Number of most-changed areas to export as 2D and 3D before/after examples. Use 0 to disable." data-tip="Number of most-changed areas to export as 2D and 3D before/after examples. Use 0 to disable."></span>
+            </span>
+            <input name="roi_sample_count" type="number" min="0" max="10" step="1" />
+          </label>
+
+          <div class="toggle-row">
+            <label class="toggle">
+              <input name="postprocess" type="checkbox" />
+              <span class="toggle-label">
+                Postprocess
+                <span class="help-tip" tabindex="0" title="Run morphological cleanup after FTV to reduce isolated correction artifacts." aria-label="Run morphological cleanup after FTV to reduce isolated correction artifacts." data-tip="Run morphological cleanup after FTV to reduce isolated correction artifacts."></span>
+              </span>
+            </label>
+            <label class="toggle">
+              <input name="save_sarp" type="checkbox" />
+              <span class="toggle-label">
+                Save SARP
+                <span class="help-tip" tabindex="0" title="Store the adaptive SARP fidelity field in the output NetCDF for later inspection." aria-label="Store the adaptive SARP fidelity field in the output NetCDF for later inspection." data-tip="Store the adaptive SARP fidelity field in the output NetCDF for later inspection."></span>
+              </span>
+            </label>
+          </div>
+
+          <button id="runButton" class="primary-button" type="submit">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            <span>Queue or load cached</span>
+          </button>
+        </form>
+      </section>
+
+      <section class="panel result-panel" aria-labelledby="resultTitle">
+        <div class="panel-heading">
+          <div>
+            <h2 id="resultTitle">Result</h2>
+            <p id="resultSubtitle">No saved run selected</p>
+          </div>
+          <div class="result-actions">
+            <button id="cancelJobButton" class="mini-button danger-button" type="button" hidden>Cancel</button>
+            <button id="retryJobButton" class="mini-button" type="button" hidden>Retry</button>
+            <button id="deleteJobButton" class="mini-button" type="button" hidden>Delete</button>
+            <a id="reportLink" class="secondary-link is-disabled" href="#" download hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>
+              <span>Report</span>
+            </a>
+            <span id="viewerState" class="secondary-link is-disabled">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v10H4z"/><path d="M8 19h8M12 15v4"/></svg>
+              <span>Inline 3D</span>
+            </span>
+          </div>
+        </div>
+
+        <div id="statusBox" class="status-box">Ready</div>
+        <div class="progress-track" aria-label="Calculation progress">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <div class="preview-frame">
+          <img id="comparisonImage" alt="FTV before and after comparison" />
+          <div id="emptyPreview" class="empty-preview">Saved results will appear here</div>
+        </div>
+
+        <section id="slopeSection" class="diagnostic-section" hidden>
+          <div class="subsection-heading">
+            <div>
+              <h3>Slope comparison</h3>
+              <p id="slopeMeta">Slope maps before and after FTV plus slope delta</p>
+            </div>
+          </div>
+          <div class="diagnostic-frame">
+            <img id="slopeImage" alt="Slope before, after, and delta comparison" />
+          </div>
+        </section>
+
+        <section id="terrainSection" class="terrain-section" hidden>
+          <div class="subsection-heading">
+            <div>
+              <h3>Interactive 3D terrain</h3>
+              <p id="terrainMeta">Full exported terrain model</p>
+            </div>
+            <div class="terrain-controls">
+              <label>
+                <span>Layer</span>
+                <select id="terrainModeSelect">
+                  <option value="after">After</option>
+                  <option value="before">Before</option>
+                  <option value="blend">Blend</option>
+                  <option value="difference">Difference</option>
+                </select>
+              </label>
+              <label>
+                <span>Vertical</span>
+                <input id="terrainVerticalSlider" type="range" min="25" max="800" value="240" />
+              </label>
+              <input id="terrainVerticalInput" class="terrain-number" type="number" min="0.1" max="8" step="0.1" value="2.4" aria-label="Vertical scale value" />
+              <output id="terrainVerticalValue">2.40x</output>
+              <button id="terrainResetButton" class="mini-button" type="button">Fit</button>
+            </div>
+          </div>
+          <div class="embedded-terrain" id="fullTerrainFrame">
+            <canvas id="fullTerrainCanvas" aria-label="Interactive full-area terrain model"></canvas>
+            <div id="fullTerrainLoading" class="terrain-loading">Waiting for 3D result</div>
+            <div class="terrain-hint">Drag to orbit | Shift + drag to pan | Wheel to zoom</div>
+          </div>
+        </section>
+
+        <section id="roiSection" class="roi-section" hidden>
+          <div class="subsection-heading">
+            <div>
+              <h3>Most changed areas</h3>
+              <p id="roiMeta">Before/after examples ranked by mean absolute correction</p>
+            </div>
+          </div>
+          <div class="roi-table" id="roiTable" aria-label="Most changed areas table"></div>
+        </section>
+
+        <div class="metrics-grid" id="metricsGrid" aria-label="Run metrics"></div>
+      </section>
+
+      <aside class="panel history-panel" aria-labelledby="historyTitle">
+        <div class="panel-heading">
+          <h2 id="historyTitle">Saved runs</h2>
+          <div class="history-tools">
+            <button id="cleanupButton" class="mini-button" type="button">Cleanup</button>
+            <span id="runCount" class="muted-count">0</span>
+          </div>
+        </div>
+        <p id="storageState" class="storage-state">Storage: checking</p>
+        <div id="historyList" class="history-list"></div>
+      </aside>
+    </main>
+
+    <script src="/static/terrain_viewer.js"></script>
+    <script src="/static/app_presets.js"></script>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
+

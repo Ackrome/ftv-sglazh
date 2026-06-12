@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FTV Terrain Viewer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="toolbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <h1>FTV Terrain Viewer</h1>
+          <p id="sourceLabel">Loading full-area 3D model</p>
+        </div>
+      </div>
+      <div class="toolbar-controls">
+        <div class="control">
+          <span>Scene</span>
+          <strong id="sceneLabel">Full study area</strong>
+        </div>
+        <div class="device-state"><i></i><b id="rendererLabel">WebGL2 live mesh</b></div>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <aside class="sidebar">
+        <section>
+          <h2>Terrain layer</h2>
+          <label class="layer-option">
+            <input type="radio" name="layerMode" value="after" checked />
+            <span class="layer-swatch swatch-after"></span>
+            <span><b>After FTV</b><small>Smoothed DEM</small></span>
+          </label>
+          <label class="layer-option">
+            <input type="radio" name="layerMode" value="before" />
+            <span class="layer-swatch swatch-before"></span>
+            <span><b>Before FTV</b><small>Source DEM</small></span>
+          </label>
+          <label class="layer-option">
+            <input type="radio" name="layerMode" value="blend" />
+            <span class="layer-swatch swatch-blend"></span>
+            <span><b>Blend layers</b><small>Interactive mix</small></span>
+          </label>
+          <label class="layer-option">
+            <input type="radio" name="layerMode" value="difference" />
+            <span class="layer-swatch swatch-difference"></span>
+            <span><b>Correction map</b><small>After minus before</small></span>
+          </label>
+        </section>
+
+        <section>
+          <h2>Display</h2>
+          <label class="range-control">
+            <span><b>Layer mix</b><output id="mixValue">100%</output></span>
+            <input id="mixSlider" type="range" min="0" max="100" value="100" />
+          </label>
+          <label class="range-control">
+            <span><b>Vertical scale</b><output id="verticalValue">2.40x</output></span>
+            <input id="verticalSlider" type="range" min="25" max="800" value="240" />
+          </label>
+          <label class="toggle-control">
+            <input id="baseToggle" type="checkbox" checked />
+            <span>Horizontal base plane</span>
+          </label>
+          <button id="resetButton" class="secondary-button" type="button">Fit entire area</button>
+        </section>
+
+        <section class="metadata">
+          <h2>Model</h2>
+          <dl>
+            <div><dt>Mesh grid</dt><dd id="gridValue">-</dd></div>
+            <div><dt>Source grid</dt><dd id="sourceGridValue">-</dd></div>
+            <div><dt>Span</dt><dd id="spanValue">-</dd></div>
+            <div><dt>Coverage</dt><dd id="coverageValue">-</dd></div>
+            <div><dt>Base</dt><dd>Horizontal XZ</dd></div>
+          </dl>
+        </section>
+      </aside>
+
+      <section class="viewer-panel" aria-label="Interactive 3D terrain model">
+        <div id="terrainViewport" class="terrain-viewport" tabindex="0">
+          <canvas id="terrainCanvas" aria-label="Interactive full-area terrain model"></canvas>
+          <div class="canvas-topline">
+            <span id="modeBadge">After FTV</span>
+            <span id="viewBadge">Orbit view</span>
+          </div>
+          <div id="loadingState" class="loading-state">Loading terrain mesh</div>
+          <div class="canvas-hint">
+            Drag: orbit&nbsp;&nbsp; Shift + drag: pan&nbsp;&nbsp; Wheel: zoom&nbsp;&nbsp; Double click: fit
+          </div>
+        </div>
+        <footer class="statusbar">
+          <span><i></i><b id="statusLabel">Preparing WebGL2 model</b></span>
+          <span id="triangleLabel">- triangles</span>
+          <button id="autoRotateButton" type="button">Auto rotate</button>
+        </footer>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

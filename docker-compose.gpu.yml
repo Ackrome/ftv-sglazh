@@ -1,0 +1,38 @@
+services:
+  api:
+    build:
+      args:
+        FTV_INSTALL_GPU: "1"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  worker-gpu:
+    build:
+      context: .
+      args:
+        FTV_INSTALL_GPU: "1"
+    command: celery -A ftv_smoothing.worker.celery_app worker --loglevel=INFO --concurrency=1 --queues=gpu --hostname=gpu@%h
+    environment:
+      FTV_INPUT_NC: /data/relief_masked.nc
+      FTV_RESULTS_DIR: /data/artifacts/app-results
+      FTV_JOBS_DB: /data/artifacts/app-results/jobs.sqlite3
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      FTV_LOG_LEVEL: INFO
+    volumes:
+      - ./:/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

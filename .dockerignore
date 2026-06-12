@@ -1,0 +1,11 @@
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+artifacts
+docx-media
+docx-render
+graphify-out
+*.nc
+*.docx
+repomix-output.xml

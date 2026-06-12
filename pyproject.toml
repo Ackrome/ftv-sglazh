@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ftv-smoothing"
+version = "0.1.0"
+description = "Fractional-order total variation smoothing for masked digital elevation models"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "celery[redis]>=5.4",
+    "fastapi>=0.115",
+    "flower>=2.0",
+    "forge3d==1.26.0",
+    "h5py==3.16.0",
+    "h5netcdf==1.8.1",
+    "matplotlib==3.10.9",
+    "numba==0.65.1",
+    "numpy==2.4.6",
+    "pillow==12.2.0",
+    "psutil==7.2.2",
+    "scikit-image==0.26.0",
+    "scipy==1.17.1",
+    "uvicorn[standard]>=0.30",
+    "xarray==2026.4.0",
+]
+
+[project.optional-dependencies]
+gpu = ["cupy-cuda13x[ctk]==14.1.0"]
+test = ["pytest==9.0.3"]
+
+[project.scripts]
+ftv-smooth = "ftv_smoothing.cli:main"
+ftv-render-3d = "ftv_smoothing.forge3d_visualize:main"
+ftv-render-turntable = "ftv_smoothing.forge3d_visualize:turntable_main"
+ftv-export-webgl = "ftv_smoothing.webgl_export:main"
+ftv-serve-3d = "ftv_smoothing.viewer_server:main"
+ftv-app = "ftv_smoothing.app_server:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ftv_smoothing = [
+    "viewer_assets/*.html",
+    "viewer_assets/*.css",
+    "viewer_assets/*.js",
+    "app_assets/*.html",
+    "app_assets/*.css",
+    "app_assets/*.js",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
